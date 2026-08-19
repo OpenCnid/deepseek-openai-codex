@@ -1,6 +1,8 @@
 # `deepseek-openai-codex` standalone plugin specification
 
-Status: implementation-ready design; no implementation exists yet.
+Status: implemented for the audited first-release baseline. This document
+remains the normative contract; implementation-driven corrections are called
+out where the audited runtime required them.
 
 This document is normative for the first implementation of `deepseek-openai-codex`.
 The words **must**, **must not**, **should**, and **may** express requirement strength.
@@ -89,6 +91,16 @@ Registry observation on 2026-08-19:
 - the audited DSH tag reports `0.1.0-rc.7` for its current workspace packages;
 - `deepseek-openai-codex` returned npm `E404`, but the name must be checked again immediately before publication.
 
+Exact-version preflight found a complete published `0.1.0-rc.7` production
+package set despite those older default-tag results. The production release
+path is therefore compatible with the audited baseline. One optional test-only
+package is inconsistent: the published
+`@deepseek-ai/dsh-client-test-runtime@0.1.0-rc.7` imports
+`ConversationEventRegistry` from the published client runtime, which does not
+export that name. This does not affect Host or browser production assembly;
+browser tests must use the closest public Cordis/slot harness until the helper
+package is republished consistently.
+
 At minimum, verify the public availability and types for:
 
 - `@deepseek-ai/cordis`;
@@ -138,7 +150,7 @@ The repository should produce one npm package with these public faces:
 | `.` | Node Host | Cordis plugin, configuration, registrations, auth coordinator |
 | `./client` | Browser | Settings card and auth interaction UI |
 | `./typert` | Node Host | Plugin-owned RPC reflection registration |
-| `./remote` | Browser/types | Generated typed client for the plugin RPC |
+| `./remote` | Browser/types | Generated typed client contribution for the plugin RPC |
 | `./package.json` | Node/tooling | DSH manifest discovery |
 
 Internal modules should separate adapter, conversion, credential store, locking, auth attempts, errors, and configuration.
@@ -246,6 +258,17 @@ Removing the package through `dsh plugin` must remove its bundle layer and leave
 The package must reproduce the DSH browser bundle output required for an out-of-tree `dsh.client` package.
 Do not import an unpublished monorepo-only tsdown helper at runtime or assume the DSH web app will be rebuilt.
 The compiled browser entry must remain lazy-loadable and must not import Node built-ins, Pi, OAuth code, or credential code.
+
+Implementation correction from the assembled `0.1.0-rc.7` runtime: Host
+`./typert` contributions are package-discovered, but the built-in browser
+Remote assembly mounts only its explicitly selected first-party contributions.
+An out-of-tree package's client entry must therefore import and mount its own
+generated `./remote` contribution through `ctx.remote.$mount()` before the card
+accesses its namespace. Because Cordis guards nested service access, the card
+must run in a lifecycle-owned child plugin that injects
+`remote.openaiCodexAuth`; the parent owns the Remote mount and disposes the
+child before unmounting it. Waiting for that nested service on the parent entry
+would deadlock before the package could mount it.
 
 ## 8. Host configuration
 
@@ -551,6 +574,12 @@ Cover login success, manual code, device code, secret prompt, cancellation, logo
 Render the real client plugin with the DSH client test runtime or the closest public harness.
 Verify card registration, accessible names, sign-in flow, prompt types, focus behavior, cancellation, retry, logout confirmation, safe reconnect, and redaction.
 
+For the audited release, the closest public harness is required because the
+published `@deepseek-ai/dsh-client-test-runtime@0.1.0-rc.7` and published
+client-runtime artifact disagree on the `ConversationEventRegistry` export.
+Tests must still use real Cordis registration semantics and the public slot
+contract, and assembled browser verification remains mandatory.
+
 ### 16.5 Assembled DSH integration
 
 Use a separate clean checkout of the pinned DSH baseline as a read-only host fixture.
@@ -633,7 +662,10 @@ The first implementation is complete only when all of these are true:
 - all checks in section 16 pass;
 - the packed artifact installs and imports in a clean consumer;
 - release documentation accurately names the supported DSH/Pi versions;
-- npm publication remains blocked until compatible public DSH packages and a project license are confirmed by the owner.
+- npm publication remains blocked until the owner selects a project license,
+  approves the npm name/owner and release visibility, and approves the
+  third-party notice. The exact compatible public DSH production package set
+  was confirmed during implementation.
 
 ## 20. Sources and evidence
 
