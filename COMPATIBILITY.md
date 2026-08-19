@@ -55,11 +55,3 @@ artifact used at runtime.
   would result from declaring the nested injection on the parent entry.
 - No compatibility is claimed for DSH versions before or after
   `0.1.0-rc.7`; the peer range is intentionally pinned to that release line.
-
-## Repository state note
-
-The supplied repository directory contains `SPEC.md`, `README.md`, and
-`IMPLEMENTATION_PROMPT.md`, but no `.git` directory. Consequently there was no
-repository status or history to inspect and no commit workflow to use. Existing
-files are preserved and implementation changes are kept isolated to this
-directory.
