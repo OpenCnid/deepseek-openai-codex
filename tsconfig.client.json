@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./lib/types",
+    "tsBuildInfoFile": "./lib/client.tsbuildinfo",
+    "types": ["react"]
+  },
+  "include": ["src/client/**/*.ts", "src/client/**/*.tsx", "src/auth/types.ts"]
+}
