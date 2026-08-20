@@ -1,51 +1,58 @@
-# deepseek-openai-codex
+<p align="center">
+  <a href="https://github.com/OpenCnid/deepseek-openai-codex">
+    <img src="./artifacts/deepseek-openai-codex.svg" alt="DeepSeek Harness to OpenAI Codex through a Cordis plugin" width="100%">
+  </a>
+</p>
 
-`deepseek-openai-codex` is a standalone DeepSeek Harness Cordis plugin that
-adds the `openai-codex` provider backed by an eligible ChatGPT subscription.
-DSH continues to own the agent loop, tools, approvals, sessions, and UI; the
-plugin delegates OAuth, refresh, the model catalog, direct Codex request
-construction, and streaming to `@earendil-works/pi-ai`.
+<p align="center">
+  <img alt="Node.js 22.19 or newer" src="https://img.shields.io/badge/Node.js-%E2%89%A522.19-5FA04E?style=flat-square&logo=nodedotjs&logoColor=white">
+  <img alt="DeepSeek Harness 0.1.0 release candidate 7" src="https://img.shields.io/badge/DeepSeek_Harness-0.1.0--rc.7-4D6BFE?style=flat-square">
+  <img alt="Cordis 4.0.1" src="https://img.shields.io/badge/Cordis-4.0.1-8B5CF6?style=flat-square">
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-6-3178C6?style=flat-square&logo=typescript&logoColor=white">
+</p>
+
+# OpenAI Codex for DeepSeek Harness
+
+Use OpenAI Codex models from an eligible ChatGPT subscription inside
+[DeepSeek Harness](https://github.com/deepseek-ai/DeepSeek-Harness). This
+standalone Cordis plugin adds the `openai-codex` provider while DeepSeek
+Harness continues to own the agent loop, tools, approvals, sessions, and UI.
+
+> [!IMPORTANT]
+> The plugin currently supports **DSH `0.1.0-rc.7` only** and is not published
+> to npm. Install it from a local checkout as shown below.
+
+## Why this plugin
+
+- **Subscription OAuth:** signs in with ChatGPT; it does not use
+  `OPENAI_API_KEY` or API-key billing.
+- **Native Harness workflow:** Codex models appear in the normal DeepSeek
+  Harness model picker and participate in regular tool calls.
+- **Host-owned credentials:** OAuth state is stored through DSH credentials,
+  with validation, refresh serialization, bounded replay, and sanitized errors.
+- **Direct provider path:** requests stream through
+  `@earendil-works/pi-ai`; no Codex CLI or `codex app-server` is required.
 
 ```text
-DeepSeek Harness LLM seam
-  -> deepseek-openai-codex
-  -> @earendil-works/pi-ai@0.84.2
-  -> OpenAI Codex Responses API
+DeepSeek Harness  →  Cordis plugin  →  Pi AI  →  OpenAI Codex Responses API
+ agent + tools        auth + adapter    OAuth        streamed response
 ```
 
-The plugin does not launch or speak to `codex app-server`, does not require the
-Codex CLI, and never falls back to `OPENAI_API_KEY`. Pi's direct request
-identity—including `originator: pi` and Pi's `User-Agent`—is preserved.
+## Quick start
 
-## Compatibility and release status
-
-- Supported Host: DSH `0.1.0-rc.7` / tag `dsh-v0.1.0-rc.7` only.
-- Cordis: `4.0.1`.
-- Pi: exactly `@earendil-works/pi-ai@0.84.2`.
-- Node.js: `>=22.19.0` (verification used Node 24.19.0).
-- Package state: implemented and locally packable, but intentionally private
-  and not published.
-
-The exact `0.1.0-rc.7` DSH package set is available publicly even though some
-npm default tags still resolve older release candidates. No compatibility is
-claimed for another DSH release. See [COMPATIBILITY.md](COMPATIBILITY.md) for
-the audited exports and release gates.
-
-npm publication remains blocked on repository-owner decisions: license,
-package-name/owner approval, release visibility, and approval of the
-third-party notice. The package must not be published until those are settled.
-
-## Install from this checkout
-
-Build and pack with the exact lockfile:
+Prerequisites: Node.js `>=22.19.0`, pnpm `11.19.0`, and the complete DeepSeek
+Harness `0.1.0-rc.7` package set.
 
 ```sh
+git clone https://github.com/OpenCnid/deepseek-openai-codex.git
+cd deepseek-openai-codex
 pnpm install --frozen-lockfile
 pnpm run build
 pnpm pack --pack-destination ./dist-pack
 ```
 
-Install the resulting tarball through the real DSH profile workflow:
+Install the packed plugin into your DSH profile, verify its configuration, and
+start the profile:
 
 ```sh
 dsh plugin --profile web add ./dist-pack/deepseek-openai-codex-0.1.0.tgz
@@ -53,107 +60,78 @@ dsh --profile web --dump-config
 dsh --profile web
 ```
 
-The config dump should contain one row with id `deepseek-openai-codex`.
-Installing from a package checkout also works after a build:
+The config dump should contain exactly one row with the id
+`deepseek-openai-codex`.
+
+## Connect your ChatGPT subscription
+
+1. In DSH, open **Settings → Plugins**.
+2. Find **OpenAI Codex** and select **Sign in with ChatGPT**.
+3. Choose the browser or device-code flow and complete the prompts.
+4. Wait for **Configured**, then select an OpenAI Codex model from the normal
+   model picker.
+
+<p align="center">
+  <img src="./artifacts/openai-codex-assembled-flow.gif" alt="Safe assembled DeepSeek Harness sign-in, model selection, tool round trip, logout, and removal workflow" width="900">
+</p>
+
+<p align="center"><sub>Safe assembled workflow: sign in → select a model → run a tool round trip → log out. No real credential is recorded.</sub></p>
+
+<details>
+<summary>View the key screens</summary>
+
+| Sign in | Choose a Codex model | Complete a tool round trip |
+| --- | --- | --- |
+| ![OpenAI Codex plugin card before sign-in](artifacts/01-not-configured.jpg) | ![OpenAI Codex models in the DSH model picker](artifacts/06-provider-selection.jpg) | ![Completed model and tool round trip](artifacts/07-model-tool-roundtrip.jpg) |
+
+</details>
+
+## Credential safety
+
+`OPENAI_CODEX_OAUTH` is a plugin-owned DSH credential reference containing a
+Pi OAuth credential—not a generic API key. Do not copy it into settings, edit
+it manually, reuse it for another provider, or commit it. Sign-in succeeds only
+after the credential is durably stored; logout removes it through the active
+credential provider.
+
+ChatGPT subscription access and OpenAI API billing are separate products.
+Setting `OPENAI_API_KEY` does not configure this plugin and is never used as a
+fallback.
+
+## Common fixes
+
+- **Plan or permission error:** confirm the ChatGPT account is eligible for
+  Codex subscription access, then sign in again.
+- **Expired or cancelled login:** select **Retry sign-in** in the plugin card.
+- **Read-only credential provider:** make the active provider for
+  `OPENAI_CODEX_OAUTH` writable.
+- **Provider collision:** remove the other plugin that owns `openai-codex`;
+  this plugin deliberately refuses to register an alias.
+- **Plugin card does not load:** confirm every DSH web package is from
+  `0.1.0-rc.7`.
+
+See [COMPATIBILITY.md](COMPATIBILITY.md) for the audited package matrix and
+[INTEGRATION_PROOF.md](INTEGRATION_PROOF.md) for the clean-tarball and assembled
+DSH acceptance record.
+
+## Development
 
 ```sh
-dsh plugin --profile web add .
+pnpm install --frozen-lockfile
+pnpm run typecheck
+pnpm run lint
+pnpm run test
+pnpm run build
+pnpm run pack:inspect
 ```
 
-After an approved npm release, the intended command is:
+The test suite covers credential durability and locking, auth coordination,
+mounted Host Remote calls, request and stream conversion, Pi's direct
+transport, browser interactions, lifecycle cleanup, and package metadata.
 
-```sh
-dsh plugin --profile web add deepseek-openai-codex
-```
-
-That registry command does not work today because this package has not been
-published.
-
-If pnpm 11 asks for build-script policy while installing the local tarball,
-review the reported transitive packages and record an explicit `allowBuilds`
-decision in the disposable profile. The assembled verification used `false`
-for `@google/genai` and `protobufjs`; neither build script is needed by this
-plugin's direct path.
-
-## Sign in, recover, and log out
-
-1. Start the DSH web profile and open **Settings → Plugins**.
-2. Find **OpenAI Codex** and choose **Sign in with ChatGPT**.
-3. Select Pi's browser or device-code login method and complete the prompts.
-4. Confirm the card reports **Configured**, then choose a Codex model in the
-   normal model picker.
-
-The browser is only a typed interaction surface. Pi's OAuth implementation
-runs on the Host, and the credential is durably committed before success is
-reported. Reloading the page can resume a live attempt from the Host's bounded
-event buffer. Secret answers are delivered once and are not replayed.
-
-To cancel a live attempt, use **Cancel sign-in**. To recover from an expired or
-failed attempt, use **Retry sign-in**. To remove the credential, choose **Log
-out** on the same card and confirm. Logout is idempotent.
-
-### Credential ownership warning
-
-`OPENAI_CODEX_OAUTH` is a plugin-owned DSH credential reference. Its value is a
-compact Pi OAuth credential, not a generic API key. Do not copy it into
-settings, edit it by hand, reuse it for another provider, or commit it. The
-plugin resolves it through `ctx.credentials` on every operation and uses a
-cross-process lock for refresh and replacement.
-
-ChatGPT subscription access and OpenAI API-key billing are separate products.
-This provider uses only the subscription OAuth path; setting `OPENAI_API_KEY`
-does not configure it and cannot act as a fallback.
-
-## Configuration
-
-The package-owned bundle row supplies complete defaults because DSH patch rows
-replace configuration rather than deep-merge it.
-
-| Setting | Default | Meaning |
-| --- | ---: | --- |
-| `credentialRef` | `OPENAI_CODEX_OAUTH` | Plugin-owned DSH credential reference |
-| `loginAttemptLifetimeMs` | `600000` | Live/terminal attempt retention |
-| `authEventReplayCapacity` | `64` | Bounded Host auth-event replay |
-| `authReadTimeoutMs` | `25000` | Long-poll timeout |
-| `credentialLockAcquireTimeoutMs` | `10000` | Cross-process lock acquisition limit |
-| `credentialLockStaleMs` | `30000` | Stale lock threshold |
-| `lockDirectory` | unset | Optional absolute lock directory override |
-| `adapterTimeoutMs` | `120000` | Provider operation timeout |
-
-Provider id, OAuth endpoints and client protocol, Codex Responses endpoint,
-and `originator: pi` are compatibility facts and are not configurable.
-
-## Troubleshooting
-
-- **Plan or permission error:** sign in again and confirm the ChatGPT account
-  is eligible for Codex subscription access. An OpenAI API balance does not
-  satisfy this route.
-- **Login expired or cancelled:** retry from the Plugins card. Only one live
-  attempt is allowed per Host process.
-- **Read-only or shadowed credential:** make the active DSH credential provider
-  for `OPENAI_CODEX_OAUTH` writable. The card diagnoses this before login.
-- **Invalid stored OAuth JSON:** log out/remove the damaged plugin-owned
-  credential through the active credential provider, then sign in again. The
-  Host refuses to mount a usable route over invalid durable state.
-- **Provider collision:** remove the other adapter/configurable provider that
-  already owns `openai-codex`. This plugin fails loud rather than registering
-  an alias.
-- **Credential lock timeout:** stop stale DSH processes using the same
-  credential reference, verify the lock directory is writable, and retry. Do
-  not delete an active lock from a running process.
-- **Card fails to load:** verify the profile uses the complete DSH
-  `0.1.0-rc.7` web package set. The package client mounts its own generated
-  Remote contribution; older client runtimes are unsupported.
-
-## Security posture
-
-Tokens, authorization codes, device codes, serialized credentials, and secret
-prompt answers stay out of DSH settings, session/model messages, browser
-persistence, RPC status payloads, logs, telemetry, snapshots, and error text.
-Durable storage is owned exclusively by `ctx.credentials`. Browser URLs are
-scheme-checked, RPC inputs and durable JSON are validated at their boundaries,
-errors are sanitized, event buffers are bounded, and live work is aborted on
-Cordis disposal. No test or recording uses a real ChatGPT credential.
+The implementation contract lives in [SPEC.md](SPEC.md). Contributor and agent
+guidance lives in [AGENTS.md](AGENTS.md), and adapted DSH conversion code is
+acknowledged in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## Remove
 
@@ -161,28 +139,13 @@ Cordis disposal. No test or recording uses a real ChatGPT credential.
 dsh plugin --profile web remove deepseek-openai-codex
 ```
 
-Restart the profile after removal. The package layer, Host row, adapter route,
-generated browser Remote, and settings card are withdrawn. A completed logout
-removes `OPENAI_CODEX_OAUTH`; uninstall alone deliberately does not delete
-credentials behind the user's back.
+Restart the profile after removal. Uninstalling does not silently delete stored
+credentials; use **Log out** first if you also want to remove
+`OPENAI_CODEX_OAUTH`.
 
-## Development and evidence
+## Release status
 
-```sh
-pnpm run typecheck
-pnpm run lint
-pnpm run test
-pnpm run build
-pnpm pack --dry-run
-```
-
-The suite covers credential durability/locking, cross-process modification,
-auth coordination, real mounted Host Remote calls, request and stream
-conversion, Pi's real direct transport, browser interactions, lifecycle, and
-package metadata. See [INTEGRATION_PROOF.md](INTEGRATION_PROOF.md) for the
-clean-tarball and assembled DSH acceptance record.
-
-![Assembled OpenAI Codex auth and model/tool flow](artifacts/openai-codex-assembled-flow.gif)
-
-The implementation specification remains in [SPEC.md](SPEC.md). Adapted DSH
-conversion code is acknowledged in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+The package is implemented, tested, locally packable, intentionally private,
+and not published. A public release still requires repository-owner decisions
+about licensing, package ownership, visibility, and third-party notices. Do not
+publish it until those gates are resolved.

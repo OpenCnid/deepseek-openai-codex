@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420" role="img" aria-labelledby="title desc">
+  <title id="title">DeepSeek Harness to OpenAI Codex</title>
+  <desc id="desc">A Cordis plugin connecting DeepSeek Harness to OpenAI Codex through Pi AI and ChatGPT subscription OAuth.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#07111f"/>
+      <stop offset="0.52" stop-color="#111827"/>
+      <stop offset="1" stop-color="#18112b"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5b8cff"/>
+      <stop offset="0.52" stop-color="#7c5cff"/>
+      <stop offset="1" stop-color="#20c997"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="26"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="420" rx="28" fill="url(#background)"/>
+  <circle cx="110" cy="70" r="150" fill="#4d6bfe" opacity="0.18" filter="url(#glow)"/>
+  <circle cx="1100" cy="360" r="170" fill="#7c3aed" opacity="0.16" filter="url(#glow)"/>
+  <path d="M0 350 C240 280 370 430 620 350 S950 275 1200 340 V420 H0Z" fill="#fff" opacity="0.025"/>
+
+  <g transform="translate(70 55)">
+    <rect width="192" height="38" rx="19" fill="#17243a" stroke="#36537e"/>
+    <circle cx="22" cy="19" r="5" fill="#20c997"/>
+    <text x="38" y="25" fill="#dce8ff" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" letter-spacing="1.2">CORDIS PLUGIN</text>
+  </g>
+
+  <text x="70" y="158" fill="#f8fafc" font-family="Arial, Helvetica, sans-serif" font-size="58" font-weight="800">OpenAI Codex</text>
+  <text x="70" y="218" fill="url(#accent)" font-family="Arial, Helvetica, sans-serif" font-size="48" font-weight="800">for DeepSeek Harness</text>
+  <text x="72" y="262" fill="#aebbd0" font-family="Arial, Helvetica, sans-serif" font-size="20">ChatGPT subscription OAuth • native model picker • streamed tool use</text>
+
+  <g transform="translate(70 315)" font-family="Arial, Helvetica, sans-serif">
+    <rect width="230" height="54" rx="14" fill="#101b2d" stroke="#324864"/>
+    <text x="115" y="34" text-anchor="middle" fill="#e8eef8" font-size="17" font-weight="700">DeepSeek Harness</text>
+
+    <path d="M316 27 H364" stroke="#6d83a5" stroke-width="2"/>
+    <path d="M356 20 L364 27 L356 34" fill="none" stroke="#6d83a5" stroke-width="2"/>
+
+    <rect x="380" width="178" height="54" rx="14" fill="#17162d" stroke="#594da3"/>
+    <text x="469" y="34" text-anchor="middle" fill="#eeeaff" font-size="17" font-weight="700">Pi AI</text>
+
+    <path d="M574 27 H622" stroke="#6d83a5" stroke-width="2"/>
+    <path d="M614 20 L622 27 L614 34" fill="none" stroke="#6d83a5" stroke-width="2"/>
+
+    <rect x="638" width="230" height="54" rx="14" fill="#10231f" stroke="#287c68"/>
+    <text x="753" y="34" text-anchor="middle" fill="#e5fff7" font-size="17" font-weight="700">Codex Responses</text>
+  </g>
+
+  <g transform="translate(955 55)" font-family="Arial, Helvetica, sans-serif">
+    <rect width="175" height="38" rx="19" fill="#0d251f" stroke="#276b5d"/>
+    <path d="M18 19 L24 25 L35 13" fill="none" stroke="#4adeb8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="48" y="25" fill="#c8fff0" font-size="14" font-weight="700">NO API KEY</text>
+  </g>
+</svg>
