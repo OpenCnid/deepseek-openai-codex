@@ -29,6 +29,40 @@ matrix, and third-party notice. It contains no TypeScript source, tests,
 credentials, integration artifacts, local paths, or license selected without
 owner approval.
 
+## Provider-free ordered-message correction (2026-08-25)
+
+A focused correction gate passed with 3 test files and 33 tests, and the full
+repository suite passed with 10 files and 84 tests:
+
+```text
+pnpm run typecheck                                                        PASS
+pnpm run lint                                                             PASS (no warnings)
+pnpm run test                                                             PASS (10 files, 84 tests)
+pnpm run build                                                            PASS
+pnpm pack --dry-run                                                       PASS; file list inspected
+pnpm exec vitest run tests/unit/ordered-messages.spec.ts \
+  tests/unit/translation.spec.ts tests/wire/pi-wire.spec.ts               PASS (3 files, 33 tests)
+```
+
+The real Pi 0.84.2 Codex request builder and an intercepted fake fetch prove
+that `ordered_system_user_messages_v1` produces exactly nine input messages in
+the expected role, order, and text sequence; leaves the trailing system item
+last; omits default instructions and model-facing tools; sets
+`max_output_tokens` to 4,000; and makes exactly one HTTP request with no retry
+after a simulated 503. Mutation tests reject omissions, reordering, role
+changes, aggregation, hidden prompt fields, unknown payload fields, unsupported
+history/content, and missing output limits.
+
+A clean temporary consumer then installed the generated tarball and imported
+the root Host face, `./typert`, and `./remote`; the root capability object
+reported `ordered_system_user_messages_v1: true`. The disposable consumer and
+tarball directory were removed after the smoke test.
+
+No real credential or provider call was made. The historical 2026-08-19
+assembled trace did not exercise this ordered-message shape, and live endpoint
+acceptance of the trailing system item remains pending the separately
+authorized FACT-01 conformance call.
+
 ## Real DSH CLI install and boot
 
 The local tarball was installed into a fresh isolated `web` profile using:

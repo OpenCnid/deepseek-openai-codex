@@ -22,7 +22,7 @@ packages currently have an older release on the default tag.
 | Browser Remote assembly | `@deepseek-ai/dsh-api-remotes@0.1.0-rc.7` | `./client` | Published; `ctx.remote.$mount()` is public, but the built-in assembly selects only first-party contributions, so this package self-mounts `./remote` before activating its card |
 | Browser support packages | `@deepseek-ai/dsh-client-connection`, `-locale`, `-ui-settings`, `-web-react`, `-ui-primitives` at `0.1.0-rc.7` | their documented root or `./client` entries | Published |
 | Optional browser test helper | `@deepseek-ai/dsh-client-test-runtime@0.1.0-rc.7` | `.` | Published artifact is internally inconsistent with the published client runtime: importing it fails because `ConversationEventRegistry` is not exported. Production is unaffected; tests use the closest public Cordis/slot harness plus a real assembled browser run |
-| Pi | `@earendil-works/pi-ai@0.84.2` exactly | `.`, `./providers/openai-codex`, `./api/*`, `./oauth` | Published; `createModels`, `CredentialStore`, OAuth interactions, catalog provider, and direct streaming present |
+| Pi | `@earendil-works/pi-ai@0.84.2` exactly | `.`, `./providers/openai-codex`, `./api/*`, `./oauth` | Published; `createModels`, `CredentialStore`, OAuth interactions, catalog provider, direct streaming, and the public `onPayload` callback are present |
 
 The DSH source fixture is the unmodified tag `dsh-v0.1.0-rc.7`, commit
 `99f6f02fecdb7dff40c3fbc9470f5907c29f74ca`. Its public source declarations
@@ -42,6 +42,10 @@ artifact used at runtime.
 
 - Pi `0.84.2` requires Node.js `>=22.19.0`. Node 20 is unsupported. Development
   and verification use Node 24.19.0.
+- `ordered_system_user_messages_v1` is a narrow plugin-owned projection over
+  Pi 0.84.2's public `onPayload` boundary. Intercepted-fetch tests cover the
+  installed npm artifact's final payload and zero-retry behavior; they do not
+  claim that the live subscription endpoint accepts a trailing system input.
 - `deepseek-openai-codex` returned npm `E404` during preflight, so the name was
   unclaimed at that instant. Name approval and a final availability check are
   still owner/release actions.

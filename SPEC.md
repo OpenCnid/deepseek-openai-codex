@@ -467,6 +467,31 @@ Convert a DSH `GenerateOptions` request into Pi's context and options while pres
 Anything model-visible must already be represented in DSH's logged request/history inputs.
 The plugin must not add hidden model-visible instructions.
 
+The plugin also exposes the bounded `ordered_system_user_messages_v1`
+transport capability for requests whose DSH history contains a system-role
+message. That path accepts only a nonempty ordered history of `system` and
+`user` messages with exactly one nonempty text block per message, no
+model-facing tools, no unknown request options, and an explicit `maxTokens`
+value from 1 through 4,000. It uses Pi 0.84.2's public `onPayload` callback
+after Pi constructs the Codex request to:
+
+- rebuild Responses `input` one-for-one with the exact DSH role, order, and
+  text;
+- remove Pi's default `instructions` when `GenerateOptions.system` is absent,
+  while preserving an explicit logged system slot when present;
+- set `max_output_tokens` to the exact requested limit, emit no `tools`, set
+  `tool_choice` to `none`, set `parallel_tool_calls` to `false`, and retain the
+  adapter's `maxRetries: 0` boundary; and
+- reject assistant or tool history, images, `reasoning` or unknown content
+  blocks, multiple text blocks, hidden prompt/context fields, changes to Pi's
+  expected downcast input, or any other Pi envelope drift.
+
+The machine-readable root export is
+`OPENAI_CODEX_TRANSPORT_CAPABILITIES.ordered_system_user_messages_v1 === true`.
+Provider-free tests establish local request construction and retry behavior;
+they do not establish that the live subscription endpoint accepts a trailing
+system input item.
+
 The current MIT-licensed `@deepseek-ai/dsh-llm-pi-ai` conversion modules may be used as a behavioral reference.
 If implementation code is copied or substantially adapted, preserve the required copyright and permission notice in `THIRD_PARTY_NOTICES.md` and source headers as applicable.
 Do not import its unshipped `src/*` paths.
@@ -542,7 +567,9 @@ Unit tests must cover:
 - DSH-to-Pi context conversion for text, reasoning, tools, tool results, attachments, and replay state;
 - Pi-to-DSH stream conversion for all chunk classes and malformed sequences;
 - error and retry metadata mapping;
-- adapter model discovery and exact-model resolution.
+- adapter model discovery and exact-model resolution;
+- exact ordered system/user projection, capability export, output cap, and
+  fail-closed mutation coverage for unsupported DSH and Pi payload shapes.
 
 ### 16.2 Direct wire test
 
@@ -557,6 +584,10 @@ With a fake bearer token and fake account claim, assert:
 - `originator` is exactly `pi`;
 - `User-Agent` is Pi's value;
 - the converted request contains the expected model, instructions/messages, tools, and reasoning options;
+- the bounded ordered path sends exactly nine messages in the expected role,
+  order, and text sequence, leaves the trailing system message last, omits
+  default instructions and tools, requests exactly 4,000 output tokens, and
+  makes one HTTP attempt even when the fake endpoint fails;
 - an SSE response becomes the required DSH chunk sequence;
 - abort terminates the underlying request;
 - no captured diagnostic contains the fake token or serialized credential.
