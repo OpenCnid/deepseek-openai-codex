@@ -53,6 +53,25 @@ function dshRequest(signal?: AbortSignal): GenerateOptions {
   }
 }
 
+const ORDERED_ROLES = ['system', 'system', 'system', 'system', 'user', 'user', 'user', 'user', 'system'] as const
+
+function orderedDshRequest(reasoningEffort = ReasoningEffortId('xhigh')): GenerateOptions {
+  return {
+    provider: 'openai-codex',
+    model: 'gpt-5.6-sol',
+    reasoningEffort,
+    messages: ORDERED_ROLES.map((role, index) => ({
+      id: `ordered-wire-${index}` as Message['id'],
+      role,
+      source: { kind: 'plugin', plugin: 'recursus-dsh-ordered-parts-v1' },
+      content: [{ type: 'text', text: `{"ordinal":${index}}` }],
+    })) as Message[],
+    tools: [],
+    maxTokens: 4_000,
+    sessionId: 'rc5-fact-01' as GenerateOptions['sessionId'],
+  }
+}
+
 function successSse(): string {
   const events = [
     { type: 'response.created', response: { id: 'resp_fake_wire', status: 'in_progress', output: [] } },
@@ -120,6 +139,84 @@ describe('Pi direct Codex wire', () => {
     expect(chunks.at(-1)).toMatchObject({ type: 'finish', reason: { kind: 'stop' }, replayState: { response: { responseId: 'resp_fake_wire' } } })
     expect(JSON.stringify(chunks)).not.toContain(TOKEN)
     expect(JSON.stringify(chunks)).not.toContain(REFRESH)
+  })
+
+  it('preserves the bounded ordered system/user request in Pi’s final wire payload', async () => {
+    let capturedBody: Record<string, unknown> = {}
+    const fetchMock = vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+      const headers = new Headers(init?.headers)
+      capturedBody = decodeRequestBody(init?.body, headers)
+      return new Response(successSse(), {
+        status: 200,
+        headers: { 'content-type': 'text/event-stream', 'x-request-id': 'request_fake_ordered' },
+      })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const subject = new OpenAICodexAdapter({
+      credentials: new WireStore() as unknown as DshPiCredentialStore,
+      timeoutMs: 5_000,
+    })
+    const chunks: StreamChunk[] = []
+    for await (const chunk of subject.stream(orderedDshRequest())) chunks.push(chunk)
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(capturedBody.input).toEqual(ORDERED_ROLES.map((role, index) => ({
+      role,
+      content: [{ type: 'input_text', text: `{"ordinal":${index}}` }],
+    })))
+    expect(Object.hasOwn(capturedBody, 'instructions')).toBe(false)
+    expect(Object.hasOwn(capturedBody, 'tools')).toBe(false)
+    expect(capturedBody.max_output_tokens).toBe(4_000)
+    expect(capturedBody.tool_choice).toBe('none')
+    expect(capturedBody.parallel_tool_calls).toBe(false)
+    expect(chunks.at(-1)).toMatchObject({ type: 'finish', reason: { kind: 'stop' } })
+  })
+
+  it('does not retry a failed ordered provider request', async () => {
+    const fetchMock = vi.fn(async () => new Response('fake provider failure', {
+      status: 503,
+      headers: { 'content-type': 'text/plain', 'x-request-id': 'request_fake_failure' },
+    }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const subject = new OpenAICodexAdapter({
+      credentials: new WireStore() as unknown as DshPiCredentialStore,
+      timeoutMs: 5_000,
+    })
+    const chunks: StreamChunk[] = []
+    let failure: unknown
+    try {
+      for await (const chunk of subject.stream(orderedDshRequest())) chunks.push(chunk)
+    } catch (error: unknown) {
+      failure = error
+    }
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(failure ?? chunks.at(-1)).toBeDefined()
+    expect(JSON.stringify(failure ?? chunks)).not.toContain(TOKEN)
+    expect(JSON.stringify(failure ?? chunks)).not.toContain(REFRESH)
+  })
+
+  it('validates Pi’s model-specific reasoning mapping before ordered transport', async () => {
+    let capturedBody: Record<string, unknown> = {}
+    const fetchMock = vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+      capturedBody = decodeRequestBody(init?.body, new Headers(init?.headers))
+      return new Response(successSse(), {
+        status: 200,
+        headers: { 'content-type': 'text/event-stream', 'x-request-id': 'request_fake_reasoning' },
+      })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const subject = new OpenAICodexAdapter({
+      credentials: new WireStore() as unknown as DshPiCredentialStore,
+      timeoutMs: 5_000,
+    })
+    for await (const _chunk of subject.stream(orderedDshRequest(ReasoningEffortId('minimal')))) {}
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(capturedBody.reasoning).toEqual({ effort: 'low', summary: 'auto' })
   })
 
   it('propagates caller abort to the underlying Pi fetch', async () => {

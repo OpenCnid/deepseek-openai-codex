@@ -38,6 +38,16 @@ DeepSeek Harness  →  Cordis plugin  →  Pi AI  →  OpenAI Codex Responses AP
  agent + tools        auth + adapter    OAuth        streamed response
 ```
 
+The root export `OPENAI_CODEX_TRANSPORT_CAPABILITIES` advertises the bounded
+`ordered_system_user_messages_v1` path. For a nonempty ordered history of
+single-text-block `system` and `user` messages, the plugin uses Pi's public
+payload hook to preserve every role, position, and exact text while requiring
+an explicit output-token limit, disabling tools, and keeping retries at zero.
+Unsupported shapes and unexpected Pi payload fields fail closed; ordinary
+requests continue through the existing conversion path. Provider-free wire
+tests prove construction of this payload, but live acceptance of a trailing
+system item remains unclaimed until an authorized conformance call succeeds.
+
 ## Quick start
 
 Prerequisites: Node.js `>=22.19.0`, pnpm `11.19.0`, and the complete DeepSeek

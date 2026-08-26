@@ -25,6 +25,7 @@ import type { AttachmentStore } from '@deepseek-ai/dsh-attachment'
 import { OPENAI_CODEX_PROVIDER, PROVIDER_DISPLAY_NAME } from './constants.ts'
 import { safeLlmError } from './errors.ts'
 import { toPiContext } from './context.ts'
+import { orderedSystemUserOnPayload } from './ordered-messages.ts'
 import { toStreamChunks } from './stream.ts'
 import type { DshPiCredentialStore } from './auth/credential-store.ts'
 
@@ -88,6 +89,7 @@ export class OpenAICodexAdapter extends LlmAdapter {
     if (options.stop !== undefined) throw new LlmError('OpenAI Codex does not support GenerateOptions.stop', 'UNSUPPORTED_OPTION')
     const model = this.model(options.model)
     const reasoning = resolveReasoning(model, options.reasoningEffort)
+    const onPayload = orderedSystemUserOnPayload(options, piReasoningEffort(model, reasoning))
     const containsImage = options.messages.some(message => contentHasImage(message.content))
     if (containsImage && !model.input.includes('image')) {
       throw new LlmError(`OpenAI Codex model "${model.id}" does not support image input`, 'UNSUPPORTED_CONTENT')
@@ -114,6 +116,7 @@ export class OpenAICodexAdapter extends LlmAdapter {
         ...(options.maxTokens === undefined ? {} : { maxTokens: options.maxTokens }),
         ...(options.sessionId === undefined ? {} : { sessionId: String(options.sessionId) }),
         maxRetries: 0,
+        ...(onPayload === undefined ? {} : { onPayload }),
         transport: 'sse',
         timeoutMs: this.options.timeoutMs,
         signal,
@@ -168,6 +171,12 @@ function resolveReasoning(model: Model<Api>, requested: ReasoningEffortIdType | 
   const supported = getSupportedThinkingLevels(model)
   if (supported.some(value => value === requested)) return requested as ModelThinkingLevel
   throw new LlmError(`OpenAI Codex model "${model.id}" does not support reasoning effort "${requested}"`, 'UNSUPPORTED_REASONING_EFFORT')
+}
+
+function piReasoningEffort(model: Model<Api>, reasoning: ModelThinkingLevel | undefined): string | undefined {
+  if (reasoning === undefined || reasoning === 'off') return undefined
+  const mapped = model.thinkingLevelMap?.[reasoning] ?? reasoning
+  return mapped === null ? undefined : mapped
 }
 
 function title(value: string): string {

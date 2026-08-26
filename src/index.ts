@@ -19,6 +19,10 @@ export { decodeCredential, encodeCredential } from './auth/credential-codec.ts'
 export { Config, resolveConfig } from './config.ts'
 export { OPENAI_CODEX_PROVIDER, PROVIDER_DISPLAY_NAME, SETTINGS_NAMESPACE } from './constants.ts'
 export { OpenAICodexError } from './errors.ts'
+export {
+  OPENAI_CODEX_TRANSPORT_CAPABILITIES,
+  ORDERED_SYSTEM_USER_MESSAGES_CAPABILITY,
+} from './ordered-messages.ts'
 export { OpenAICodexAuthRemote } from './typert/auth.remote.ts'
 export type * from './auth/types.ts'
 export type { Config as OpenAICodexConfig, ResolvedConfig } from './config.ts'
