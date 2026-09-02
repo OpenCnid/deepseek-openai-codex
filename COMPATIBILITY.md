@@ -1,61 +1,46 @@
-# Compatibility matrix
+# Compatibility
 
-Verified on 2026-08-19 before implementation. Registry checks used exact
-versions rather than npm's default dist-tags, because several DeepSeek Harness
-packages currently have an older release on the default tag.
+## Verified baseline
 
-## Supported baseline
+The configuration-only bundle is verified against DeepSeek Harness `0.1.2-alpha.5`:
 
-| Surface | Verified version | Required public exports | Result |
-| --- | --- | --- | --- |
-| DeepSeek Harness CLI/profile | `@deepseek-ai/dsh@0.1.0-rc.7` | `dsh` executable and bundle/profile plugin workflow | Published and compatible |
-| Cordis | `@deepseek-ai/cordis@4.0.1` | `.` | Published |
-| LLM seam | `@deepseek-ai/dsh-llm@0.1.0-rc.7` | `.`, `./types`, `./brand`, `./message` | Published; adapter, configurable-provider, model metadata, stream, replay, and error APIs present |
-| Credentials seam | `@deepseek-ai/dsh-credentials@0.1.0-rc.7` | `.`, `./types` | Published; per-operation `resolve`/`describe` and durable `set`/`unset` present |
-| Settings seam | `@deepseek-ai/dsh-settings@0.1.0-rc.7` | `.`, `./types` | Published; `installSettingsSection` and `settingsNamespace` present |
-| Attachments | `@deepseek-ai/dsh-attachment@0.1.0-rc.7` | `.` | Published; image attachment read API present |
-| Typert protocol | `@deepseek-ai/dsh-typert-protocol@0.1.0-rc.7` | `.`, `./types` | Published; Remote decorators, service binding, contribution and client types present |
-| Typert loader/registry | `@deepseek-ai/dsh-typert-loader@0.1.0-rc.7`, `@deepseek-ai/dsh-typert-registry@0.1.0-rc.7` | loader `.`, registry `.`, `./client` | Published; package-local Host `./typert` discovery is present |
-| Typert generator | `@deepseek-ai/dsh-typert-generator@0.1.0-rc.7` | `./tsdown` | Published; package-mode generation is usable out of tree |
-| Browser runtime/slot | `@deepseek-ai/dsh-client-runtime@0.1.0-rc.7`, `@deepseek-ai/dsh-client-ui-slots@0.1.0-rc.7` | runtime `./client`, slots `.` | Published |
-| Plugins settings card | `@deepseek-ai/dsh-client-ui-settings-plugins@0.1.0-rc.7` | `./client` | Published; `settings.plugin.item` declaration present |
-| Browser Remote assembly | `@deepseek-ai/dsh-api-remotes@0.1.0-rc.7` | `./client` | Published; `ctx.remote.$mount()` is public, but the built-in assembly selects only first-party contributions, so this package self-mounts `./remote` before activating its card |
-| Browser support packages | `@deepseek-ai/dsh-client-connection`, `-locale`, `-ui-settings`, `-web-react`, `-ui-primitives` at `0.1.0-rc.7` | their documented root or `./client` entries | Published |
-| Optional browser test helper | `@deepseek-ai/dsh-client-test-runtime@0.1.0-rc.7` | `.` | Published artifact is internally inconsistent with the published client runtime: importing it fails because `ConversationEventRegistry` is not exported. Production is unaffected; tests use the closest public Cordis/slot harness plus a real assembled browser run |
-| Pi | `@earendil-works/pi-ai@0.84.2` exactly | `.`, `./providers/openai-codex`, `./api/*`, `./oauth` | Published; `createModels`, `CredentialStore`, OAuth interactions, catalog provider, direct streaming, and the public `onPayload` callback are present |
+| Surface | Verified value | Required behavior |
+| --- | --- | --- |
+| DSH tag | `dsh-v0.1.2-alpha.5` | Profile bundles patch existing rows by id |
+| DSH commit | `db6bdc3576c2d4e7c965e8e3ed0c2a731eed87f5` | Source used by the compatibility and assembled-profile checks |
+| Base row | `llm-pi-ai` | Mounted dormant and accepts a complete `providers` dictionary |
+| Provider | `openai-codex` | Supplied by the installed Pi catalog |
+| Authorization record | `llm-pi-ai/openai-codex` | Owned by DSH's Pi adapter and credential store |
+| Node.js | `^22.19.0 || >=24.0.0` | Matches the verified DSH engine range |
 
-The DSH source fixture is the unmodified tag `dsh-v0.1.0-rc.7`, commit
-`99f6f02fecdb7dff40c3fbc9470f5907c29f74ca`. Its public source declarations
-match the exact `0.1.0-rc.7` package exports above. The checkout remained clean
-during preflight, full workspace build, plugin installation, browser exercise,
-and removal.
+## Future-version policy
 
-The separately audited Pi source fixture is commit
-`59a71b235dadb4ad0d67557a8abb0aaa093e68b4`. The installed npm declaration
-surface for `@earendil-works/pi-ai@0.84.2` was also inspected. The registry
-metadata reports npm `gitHead` `914cf1472e715297caa30db4b9535d534a9eb718`,
-not the separately audited commit. Both sources expose the required public
-contract; wire tests in this repository pin the behavior of the actual npm
-artifact used at runtime.
+This repository delegates provider behavior to DSH instead of copying it. Later DSH releases are compatible when the automated source check and an assembled profile install both pass. Compatibility requires the same `llm-pi-ai` row id, the same `providers` configuration field, a catalog entry for `openai-codex`, and a registered native authorization flow.
 
-## Runtime and release gates
+The repository does not claim unconditional compatibility with every future DSH release. A release that renames the row, changes the configuration schema, removes the catalog provider, or changes authorization ownership requires a matching configuration update here.
 
-- Pi `0.84.2` requires Node.js `>=22.19.0`. Node 20 is unsupported. Development
-  and verification use Node 24.19.0.
-- `ordered_system_user_messages_v1` is a narrow plugin-owned projection over
-  Pi 0.84.2's public `onPayload` boundary. Intercepted-fetch tests cover the
-  installed npm artifact's final payload and zero-retry behavior; they do not
-  claim that the live subscription endpoint accepts a trailing system input.
-- `deepseek-openai-codex` returned npm `E404` during preflight, so the name was
-  unclaimed at that instant. Name approval and a final availability check are
-  still owner/release actions.
-- npm publication remains blocked until the repository owner selects a license,
-  approves the package name/owner, and approves the third-party notice for the
-  DSH conversion code adapted under MIT terms.
-- Browser Remote composition is package-owned: DSH's Host loader discovers
-  `./typert`, while the lazy client entry mounts `./remote` and activates the
-  card in a nested Cordis scope that injects the generated namespace. The real
-  assembled web profile verified this lifecycle and exposed the deadlock that
-  would result from declaring the nested injection on the parent entry.
-- No compatibility is claimed for DSH versions before or after
-  `0.1.0-rc.7`; the peer range is intentionally pinned to that release line.
+## Unsupported versions
+
+DSH `0.1.0-rc.7` and the former standalone adapter are unsupported on this branch. Git history retains that implementation for users who need to inspect or recover it. No legacy runtime file is shipped by `0.2.0-alpha.1`.
+
+## Authentication limitation
+
+The native Pi adapter registers the OAuth flow, but a DSH application still needs a user-facing authorization surface to run it. This bundle activates the route only. It intentionally does not reintroduce the retired settings card, invoke Pi's CLI, import another application's token file, or manipulate `.credentials.yaml` directly.
+
+## Verification
+
+Run the source compatibility check:
+
+```powershell
+pnpm check:dsh -- C:\path\to\deepseek-harness
+```
+
+Then install the local package into a disposable profile and inspect the composed tree:
+
+```powershell
+dsh plugin --profile codex-smoke add .
+dsh --profile codex-smoke --dump-config
+dsh plugin --profile codex-smoke remove deepseek-openai-codex
+```
+
+For a release claim, also run one real model request using a test account or an already-authorized local credential. Never place a real grant in repository fixtures or CI.

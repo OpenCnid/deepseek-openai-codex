@@ -1,161 +1,91 @@
-<p align="center">
-  <a href="https://github.com/OpenCnid/deepseek-openai-codex">
-    <img src="./artifacts/deepseek-openai-codex.svg" alt="DeepSeek Harness to OpenAI Codex through a Cordis plugin" width="100%">
-  </a>
-</p>
+# deepseek-openai-codex
 
-<p align="center">
-  <img alt="Node.js 22.19 or newer" src="https://img.shields.io/badge/Node.js-%E2%89%A522.19-5FA04E?style=flat-square&logo=nodedotjs&logoColor=white">
-  <img alt="DeepSeek Harness 0.1.0 release candidate 7" src="https://img.shields.io/badge/DeepSeek_Harness-0.1.0--rc.7-4D6BFE?style=flat-square">
-  <img alt="Cordis 4.0.1" src="https://img.shields.io/badge/Cordis-4.0.1-8B5CF6?style=flat-square">
-  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-6-3178C6?style=flat-square&logo=typescript&logoColor=white">
-</p>
+A configuration-only DeepSeek Harness profile bundle that activates the `openai-codex` route already supplied by DSH's built-in `@deepseek-ai/dsh-llm-pi-ai` adapter.
 
-# OpenAI Codex for DeepSeek Harness
+This package contains no model adapter, OAuth implementation, credential bridge, browser code, or OpenAI transport. DSH and its pinned Pi dependency own all of those behaviors. The package contributes one `cordis.patch.yml` layer:
 
-Use OpenAI Codex models from an eligible ChatGPT subscription inside
-[DeepSeek Harness](https://github.com/deepseek-ai/DeepSeek-Harness). This
-standalone Cordis plugin adds the `openai-codex` provider while DeepSeek
-Harness continues to own the agent loop, tools, approvals, sessions, and UI.
-
-> [!IMPORTANT]
-> The plugin currently supports **DSH `0.1.0-rc.7` only** and is not published
-> to npm. Install it from a local checkout as shown below.
-
-## Why this plugin
-
-- **Subscription OAuth:** signs in with ChatGPT; it does not use
-  `OPENAI_API_KEY` or API-key billing.
-- **Native Harness workflow:** Codex models appear in the normal DeepSeek
-  Harness model picker and participate in regular tool calls.
-- **Host-owned credentials:** OAuth state is stored through DSH credentials,
-  with validation, refresh serialization, bounded replay, and sanitized errors.
-- **Direct provider path:** requests stream through
-  `@earendil-works/pi-ai`; no Codex CLI or `codex app-server` is required.
-
-```text
-DeepSeek Harness  →  Cordis plugin  →  Pi AI  →  OpenAI Codex Responses API
- agent + tools        auth + adapter    OAuth        streamed response
+```yaml
+- id: llm-pi-ai
+  config:
+    providers:
+      openai-codex: {}
 ```
 
-The root export `OPENAI_CODEX_TRANSPORT_CAPABILITIES` advertises the bounded
-`ordered_system_user_messages_v1` path. For a nonempty ordered history of
-single-text-block `system` and `user` messages, the plugin uses Pi's public
-payload hook to preserve every role, position, and exact text while requiring
-an explicit output-token limit, disabling tools, and keeping retries at zero.
-Unsupported shapes and unexpected Pi payload fields fail closed; ordinary
-requests continue through the existing conversion path. Provider-free wire
-tests prove construction of this payload, but live acceptance of a trailing
-system item remains unclaimed until an authorized conformance call succeeds.
+## Compatibility
 
-## Quick start
+The configuration is verified against DSH `0.1.2-alpha.5` (`dsh-v0.1.2-alpha.5`, commit `db6bdc3576c2d4e7c965e8e3ed0c2a731eed87f5`). It is intended for later DSH versions that preserve all of these interfaces:
 
-Prerequisites: Node.js `>=22.19.0`, pnpm `11.19.0`, and the complete DeepSeek
-Harness `0.1.0-rc.7` package set.
+- the base profile contains the `llm-pi-ai` row;
+- that row accepts `config.providers` keyed by provider id;
+- the installed Pi catalog contains `openai-codex`;
+- DSH's Pi adapter owns the `llm-pi-ai/openai-codex` authorization record and OAuth flow.
 
-```sh
-git clone https://github.com/OpenCnid/deepseek-openai-codex.git
-cd deepseek-openai-codex
-pnpm install --frozen-lockfile
-pnpm run build
-pnpm pack --pack-destination ./dist-pack
+Run the compatibility check against each new DSH source checkout before claiming support:
+
+```powershell
+pnpm check:dsh -- C:\path\to\deepseek-harness
 ```
 
-Install the packed plugin into your DSH profile, verify its configuration, and
-start the profile:
+Older DSH releases, including `0.1.0-rc.7`, are not supported by this branch. See [COMPATIBILITY.md](COMPATIBILITY.md) for the exact policy and limitations.
 
-```sh
-dsh plugin --profile web add ./dist-pack/deepseek-openai-codex-0.1.0.tgz
+## Install
+
+From GitHub:
+
+```powershell
+dsh plugin --profile web add github:OpenCnid/deepseek-openai-codex
+```
+
+From a local checkout:
+
+```powershell
+dsh plugin --profile web add .
+```
+
+Confirm that the bundle patched the existing provider row:
+
+```powershell
 dsh --profile web --dump-config
-dsh --profile web
 ```
 
-The config dump should contain exactly one row with the id
-`deepseek-openai-codex`.
+The composed `llm-pi-ai` row should contain `providers.openai-codex` exactly once. Start DSH and select any model advertised for that route; model names and reasoning levels come from DSH's installed Pi catalog rather than this repository.
 
-## Connect your ChatGPT subscription
+## Sign in
 
-1. In DSH, open **Settings → Plugins**.
-2. Find **OpenAI Codex** and select **Sign in with ChatGPT**.
-3. Choose the browser or device-code flow and complete the prompts.
-4. Wait for **Configured**, then select an OpenAI Codex model from the normal
-   model picker.
+Provider activation and authorization are separate. This bundle never reads, writes, copies, or prints an OAuth credential.
 
-<p align="center">
-  <img src="./artifacts/openai-codex-assembled-flow.gif" alt="Safe assembled DeepSeek Harness sign-in, model selection, tool round trip, logout, and removal workflow" width="900">
-</p>
+Use an authorization surface supplied by your DSH installation to authorize the native record `llm-pi-ai/openai-codex`. If that DSH build exposes no authorization UI or command, this package alone cannot perform a fresh login; use a trusted DSH embedding surface that calls the registered authorization flow or upgrade to a build that supplies one. Do not place access or refresh tokens in `settings.yaml` or this repository.
 
-<p align="center"><sub>Safe assembled workflow: sign in → select a model → run a tool round trip → log out. No real credential is recorded.</sub></p>
+An existing native DSH credential remains usable after installing or removing this bundle. Credentials created by the retired `0.1.0-rc.7` adapter under `OPENAI_CODEX_OAUTH` are a different format and location; authorize again through DSH instead of copying them.
 
-<details>
-<summary>View the key screens</summary>
+## Add other Pi providers
 
-| Sign in | Choose a Codex model | Complete a tool round trip |
-| --- | --- | --- |
-| ![OpenAI Codex plugin card before sign-in](artifacts/01-not-configured.jpg) | ![OpenAI Codex models in the DSH model picker](artifacts/06-provider-selection.jpg) | ![Completed model and tool round trip](artifacts/07-model-tool-roundtrip.jpg) |
+This patch replaces the composition-level `llm-pi-ai` config rather than deep-merging it. Put additional routes in the higher-priority DSH user settings document:
 
-</details>
-
-## Credential safety
-
-`OPENAI_CODEX_OAUTH` is a plugin-owned DSH credential reference containing a
-Pi OAuth credential—not a generic API key. Do not copy it into settings, edit
-it manually, reuse it for another provider, or commit it. Sign-in succeeds only
-after the credential is durably stored; logout removes it through the active
-credential provider.
-
-ChatGPT subscription access and OpenAI API billing are separate products.
-Setting `OPENAI_API_KEY` does not configure this plugin and is never used as a
-fallback.
-
-## Common fixes
-
-- **Plan or permission error:** confirm the ChatGPT account is eligible for
-  Codex subscription access, then sign in again.
-- **Expired or cancelled login:** select **Retry sign-in** in the plugin card.
-- **Read-only credential provider:** make the active provider for
-  `OPENAI_CODEX_OAUTH` writable.
-- **Provider collision:** remove the other plugin that owns `openai-codex`;
-  this plugin deliberately refuses to register an alias.
-- **Plugin card does not load:** confirm every DSH web package is from
-  `0.1.0-rc.7`.
-
-See [COMPATIBILITY.md](COMPATIBILITY.md) for the audited package matrix and
-[INTEGRATION_PROOF.md](INTEGRATION_PROOF.md) for the clean-tarball and assembled
-DSH acceptance record.
-
-## Development
-
-```sh
-pnpm install --frozen-lockfile
-pnpm run typecheck
-pnpm run lint
-pnpm run test
-pnpm run build
-pnpm run pack:inspect
+```yaml
+llm-pi-ai:
+  providers:
+    openai-codex: {}
+    another-provider: {}
 ```
 
-The test suite covers credential durability and locking, auth coordination,
-mounted Host Remote calls, request and stream conversion, Pi's direct
-transport, browser interactions, lifecycle cleanup, and package metadata.
-
-The implementation contract lives in [SPEC.md](SPEC.md). Contributor and agent
-guidance lives in [AGENTS.md](AGENTS.md), and adapted DSH conversion code is
-acknowledged in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+DSH validates each provider against the adapter and catalog installed in that DSH version.
 
 ## Remove
 
-```sh
+```powershell
 dsh plugin --profile web remove deepseek-openai-codex
 ```
 
-Restart the profile after removal. Uninstalling does not silently delete stored
-credentials; use **Log out** first if you also want to remove
-`OPENAI_CODEX_OAUTH`.
+Removal drops only this configuration layer. It does not delete `llm-pi-ai/openai-codex` credentials or alter user settings. Sign out through DSH when you also want the stored grant removed.
 
-## Release status
+## Development
 
-The package is implemented, tested, locally packable, intentionally private,
-and not published. A public release still requires repository-owner decisions
-about licensing, package ownership, visibility, and third-party notices. Do not
-publish it until those gates are resolved.
+```powershell
+pnpm install --frozen-lockfile
+pnpm test
+pnpm check:dsh -- C:\path\to\deepseek-harness
+pnpm pack:inspect
+```
+
+The packed artifact contains only the manifest, profile patch, and user documentation.

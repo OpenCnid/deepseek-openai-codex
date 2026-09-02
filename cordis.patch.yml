@@ -1,13 +1,7 @@
-# Complete package-owned row. DSH patch layers replace row configuration rather
-# than deep-merging it, so every deployment default is stated here.
-- insert:
-    - id: deepseek-openai-codex
-      name: deepseek-openai-codex
-      config:
-        credentialRef: OPENAI_CODEX_OAUTH
-        loginAttemptLifetimeMs: 600000
-        authEventReplayCapacity: 64
-        authReadTimeoutMs: 25000
-        credentialLockAcquireTimeoutMs: 10000
-        credentialLockStaleMs: 30000
-        adapterTimeoutMs: 120000
+# Activate DSH's built-in pi-ai catalog route. This replaces the dormant
+# llm-pi-ai row's complete config; user settings remain the higher-priority
+# place for model overrides and additional provider routes.
+- id: llm-pi-ai
+  config:
+    providers:
+      openai-codex: {}

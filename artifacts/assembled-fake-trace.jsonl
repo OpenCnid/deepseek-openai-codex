@@ -1,9 +1,0 @@
-{"at":"2026-08-19T10:07:50.308Z","kind":"oauth-device-start","network":"intercepted"}
-{"at":"2026-08-19T10:07:50.313Z","kind":"oauth-device-poll","attempt":1,"network":"intercepted"}
-{"at":"2026-08-19T10:07:51.324Z","kind":"oauth-device-poll","attempt":2,"network":"intercepted"}
-{"at":"2026-08-19T10:07:52.339Z","kind":"oauth-device-poll","attempt":3,"network":"intercepted"}
-{"at":"2026-08-19T10:07:53.350Z","kind":"oauth-device-poll","attempt":4,"network":"intercepted"}
-{"at":"2026-08-19T10:07:53.353Z","kind":"oauth-token-exchange","network":"intercepted"}
-{"at":"2026-08-19T10:10:53.393Z","kind":"codex-request","call":1,"network":"intercepted","path":"/backend-api/codex/responses","model":"gpt-5.4","originator":"pi","piUserAgent":true,"toolNames":["ask_user_question","create_goal","edit","exit_plan_mode","get_goal","glob","grep","interrupt_agent","job_kill","job_list","job_output","list_agents","pwsh","ralph","read","read_image","send_message","skill","subagent","subagent_fork","todo_write","update_goal","web_search","workflow","write"],"hasToolResult":false}
-{"at":"2026-08-19T10:10:53.396Z","kind":"codex-request","call":2,"network":"intercepted","path":"/backend-api/codex/responses","model":"gpt-5.4","originator":"pi","piUserAgent":true,"toolNames":[],"hasToolResult":false}
-{"at":"2026-08-19T10:10:53.483Z","kind":"codex-request","call":3,"network":"intercepted","path":"/backend-api/codex/responses","model":"gpt-5.4","originator":"pi","piUserAgent":true,"toolNames":["ask_user_question","create_goal","edit","exit_plan_mode","get_goal","glob","grep","interrupt_agent","job_kill","job_list","job_output","list_agents","pwsh","ralph","read","read_image","send_message","skill","subagent","subagent_fork","todo_write","update_goal","web_search","workflow","write"],"hasToolResult":true}
